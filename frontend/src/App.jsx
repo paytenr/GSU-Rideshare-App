@@ -2,6 +2,8 @@ import { useState } from "react";
 
 function App() {
   const [page, setPage] = useState("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   const navBar = (
     <div
@@ -50,12 +52,17 @@ function App() {
         <input placeholder="Last Name" />
         <br /><br />
 
-        <input placeholder="Email" />
+        <input placeholder="Email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}/>
         <br /><br />
 
         <input
           type="password"
           placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
         />
         <br /><br />
 
