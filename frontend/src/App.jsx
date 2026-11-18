@@ -4,6 +4,9 @@ function App() {
   const [page, setPage] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   // handleLogin function
   const handleLogin = async () => {
@@ -39,6 +42,63 @@ function App() {
       console.error("Error: ", error);
     }
   };
+
+// handleSignup function
+const handleSignup = async () => {
+  if (!firstName.trim() || !lastName.trim() || !email.trim() || !password || !confirmPassword) {
+    alert("Please fill out all fields.");
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    alert("Passwords do not match!");
+    return;
+  }
+
+  if (password.length < 8) {
+    alert("Password must be at least 8 characters.");
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      "http://localhost:8081/api/v1/auth/register",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          email: email.trim(),
+          password: password,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const message = await response.text();
+      console.error("Signup failed:", message);
+      alert("Unable to create account. Check the console for details.");
+      return;
+    }
+
+    const data = await response.json();
+
+    console.log("Account created:", data.user.email);
+
+    setPassword("");
+    setConfirmPassword("");
+    alert("Account created successfully!");
+
+    setPage("login");
+
+  } catch (error) {
+    console.error("Signup error:", error);
+    alert("Cannot connect to the backend. Make sure Spring Boot is running.");
+  }
+};
 
   const navBar = (
     <div
@@ -81,10 +141,14 @@ function App() {
       >
         <h1 style={{ color: "#FFC72C" }}>Sign Up</h1>
 
-        <input placeholder="First Name" />
+        <input placeholder="First Name"
+        value={firstName}
+        onChange={(e) => setFirstName(e.target.value)} />
         <br /><br />
 
-        <input placeholder="Last Name" />
+        <input placeholder="Last Name"
+        value={lastName}
+        onChange={(e) => setLastName(e.target.value)} />
         <br /><br />
 
         <input placeholder="Email"
@@ -104,10 +168,12 @@ function App() {
         <input
           type="password"
           placeholder="Confirm Password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
         />
         <br /><br />
 
-        <button onClick={() => setPage("authentication")}>
+        <button onClick={handleSignup}>
           Create Account
         </button>
 
@@ -440,19 +506,24 @@ if (page === "settings") {
         Welcome Back!
       </h2>
 
-      <input placeholder="Username" />
+      <input placeholder="Email"
+      type="email"
+      value={email}
+      onChange={(e) => setEmail(e.target.value)} />
 
       <br /><br />
 
       <input
         type="password"
         placeholder="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
       />
 
       <br /><br />
 
       <button
-        onClick={() => setPage(handleLogin)}
+        onClick={handleLogin}
       >
         Login
       </button>
