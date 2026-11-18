@@ -5,6 +5,41 @@ function App() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  // handleLogin function
+  const handleLogin = async () => {
+    alert("Login button clicked!");
+    try {
+      const response = await fetch(
+        "http://localhost:8081/api/v1/auth/login",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: email,
+            password: password,
+          }),
+        }
+      );
+      console.log("Login response status:", response.status);
+      alert("Login status: " + response.status);
+      if(!response.ok){
+        alert("Invalid login. Check your email and password!");
+        return;
+      }
+      const data = await response.json();
+
+      console.log("Logged in as:", data.user.email);
+
+      setPassword("");
+      setPage("passenger");
+
+    } catch (error) {
+      console.error("Error: ", error);
+    }
+  };
+
   const navBar = (
     <div
       style={{
@@ -417,7 +452,7 @@ if (page === "settings") {
       <br /><br />
 
       <button
-        onClick={() => setPage("authentication")}
+        onClick={() => setPage(handleLogin)}
       >
         Login
       </button>
