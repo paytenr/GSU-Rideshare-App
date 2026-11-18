@@ -47,6 +47,15 @@ function App() {
     }
   };
 
+// handle logout
+const handleLogout = () => {
+  setToken("");
+  setRides([]);
+  setEmail("");
+  setPassword("");
+  setPage("login");
+};
+
 // handleSignup function
 const handleSignup = async () => {
   if (!firstName.trim() || !lastName.trim() || !email.trim() || !password || !confirmPassword) {
@@ -415,7 +424,7 @@ if (page === "settings") {
         📄 Terms & Conditions
       </button>
 
-      <button
+      <button onClick={handleLogout}
         style={{
           width: "100%",
           padding: "15px",
