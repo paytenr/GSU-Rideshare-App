@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 function App() {
   const [page, setPage] = useState("login");
@@ -7,10 +7,13 @@ function App() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [rides, setRides] = useState([]);
+  const [token, setToken] = useState("");
+  const [searchDestination, setSearchDestination] = useState("");
+  
 
   // handleLogin function
   const handleLogin = async () => {
-    alert("Login button clicked!");
     try {
       const response = await fetch(
         "http://localhost:8081/api/v1/auth/login",
@@ -26,7 +29,6 @@ function App() {
         }
       );
       console.log("Login response status:", response.status);
-      alert("Login status: " + response.status);
       if(!response.ok){
         alert("Invalid login. Check your email and password!");
         return;
@@ -34,6 +36,8 @@ function App() {
       const data = await response.json();
 
       console.log("Logged in as:", data.user.email);
+
+      setToken(data.token);
 
       setPassword("");
       setPage("passenger");
@@ -99,6 +103,85 @@ const handleSignup = async () => {
     alert("Cannot connect to the backend. Make sure Spring Boot is running.");
   }
 };
+
+// handling ride request
+const handleJoinRide = async (rideId) => {
+  if (!token) {
+    alert("Please log in before joining a ride.");
+    return;
+  }
+
+  const pickupAddress = prompt("Where would you like to be picked up?");
+
+  if (pickupAddress === null) return;
+
+  if (!pickupAddress.trim()) {
+    alert("Please enter a pickup location.");
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      `http://localhost:8081/api/v1/rides/${rideId}/requests`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          seatsRequested: 1,
+          pickupAddress: pickupAddress.trim(),
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const message = await response.text();
+      console.error("Ride request failed:", response.status, message);
+      alert("Unable to request this ride. Check the console for details.");
+      return;
+    }
+
+    alert("Ride request submitted! Waiting for driver approval.");
+
+  } catch (error) {
+    console.error("Error joining ride:", error);
+    alert("Cannot connect to the backend.");
+  }
+};
+
+// load available rides
+useEffect(() => {
+  if (page !== "passenger" || !token) return;
+
+  const loadRides = async () => {
+    try {
+      const response = await fetch(
+        "http://localhost:8081/api/v1/rides",
+        {
+          headers:{
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Unable to load rides");
+      }
+
+      const data = await response.json();
+
+      console.log("Available rides:", data);
+      setRides(data);
+
+    } catch (error) {
+      console.error("Error loading rides:", error);
+    }
+  };
+
+  loadRides();
+}, [page, token]);
 
   const navBar = (
     <div
@@ -447,6 +530,8 @@ if (page === "settings") {
 
         <input
           placeholder="Search Destination"
+          value={searchDestination}
+          onChange={(e) => setSearchDestination(e.target.value)}
           style={{
             width: "300px",
             padding: "10px",
@@ -457,32 +542,33 @@ if (page === "settings") {
 
         <br /><br />
 
-        <div
+        {rides.length === 0 && (
+          <p>No available rides.</p>
+        )}
+
+        {rides.filter((ride) =>
+        ride.destinationAddress.toLowerCase().includes(searchDestination.toLowerCase().trim())
+      ).map((ride) => (
+          <div key={ride.id}
           style={{
             backgroundColor: "white",
             color: "black",
             padding: "15px",
             borderRadius: "10px",
             marginBottom: "10px",
-          }}
-        >
-          <h3>Statesboro → Savannah</h3>
-          <p>Driver: Sarah</p>
-          <button>Join Ride</button>
-        </div>
+          }}>
 
-        <div
-          style={{
-            backgroundColor: "white",
-            color: "black",
-            padding: "15px",
-            borderRadius: "10px",
-          }}
-        >
-          <h3>Statesboro → Atlanta</h3>
-          <p>Driver: James</p>
-          <button>Join Ride</button>
-        </div>
+            <h3>
+              {ride.originAddress} to {ride.destinationAddress}
+            </h3>
+
+            <p>Driver: {ride.driverName}</p>
+
+            <button onClick={() => handleJoinRide(ride.id)}>Join Ride</button>
+          </div>
+        ))}
+
+
 
         {navBar}
       </div>
